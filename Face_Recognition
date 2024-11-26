@@ -1,0 +1,71 @@
+import face_recognition    # compare faces with present database
+import cv2                 # input from webcam to face_recognition
+import numpy as np         # numpy array used
+import csv                 # handle csv file for attendance
+import os                  # access the csv file and access file for many images to create a loop
+from datetime import datetime  # get exact date and time
+
+video_capture = cv2.VideoCapture(0)  # taking input from default webcam
+
+
+jobs_image = face_recognition.load_image_file("photos/jobs.jpeg")
+jobs_encoding = face_recognition.face_encodings(jobs_image)[0]
+
+ratan_tata_image = face_recognition.load_image_file("photos/tata.jpg")
+ratan_tata_encoding = face_recognition.face_encodings(ratan_tata_image)[0]
+
+monalisa_image = face_recognition.load_image_file("photos/monalisa.jpg")
+monalisa_encoding = face_recognition.face_encodings(monalisa_image)[0]
+
+tesla_image = face_recognition.load_image_file("photos/tesla.jpeg")
+tesla_encoding = face_recognition.face_encodings(tesla_image)[0]
+
+
+known_face_encoding = [jobs_encoding , ratan_tata_encoding , monalisa_encoding , tesla_encoding]
+
+known_faces_names = ["jobs", "ratan tata" , "monalisa", "tesla"]
+
+students = known_faces_names.copy()  # DUPLICATE OF KNOWN FACES NAMES
+
+face_locations = []    # actual coordinates of faces
+face_encodings = []    # raw data of faces
+face_names = []        # names of the face recognised
+s=True
+
+now = datetime.now()   # get exact date and time
+current_date = now.striftime("%Y-%m-%d")
+ 
+
+f = open(current_date + ".csv", "w+" , newline = "")  # open file and current date as file name and file open in write form
+lnwriter = csv.writer(f)      # class instance
+
+
+while True:
+    _,frame = video.capture.read()  # reading video input where 2 signals are generated where first is signal which is ignored and 2nd is actual video input
+    small_frame = cv2.resize(frame,(0,0), fx=0.25, fy=0.25) # decreasing the size of input received
+    rgb_small_frame = small_frame[:,:,::-1]  # convert data from "rgb" to "bgr" format as it is unstood by cv2
+    if s:
+        face_locations = face_recognition.faceface_locations(rgb_small_frame)  # detect if anyn face is present or not
+        face_encodings = face_recognition.face_encodings(rgb_small_frame , face_locations)  # store video from webcam and store face data of coming frame
+        face_names =[]
+        for face_encoding in face_encodings:
+            matches = face_recognition.compare_faces(known_face_encoding, face_encoding) # comparing store image face with face present in front of webcam
+            name =""
+            face_distance = face_recognition.face_distance(known_face_encoding, face_encoding)
+            best_match_index = np.argmin(face_distance)         # best fit of faces "".argmin" is used from numpy
+            if matches[best_match_index]:
+                name = known_faces_names[best_match_index]      # CAPTURE THE ACTUAL NAME NOW AFTER COMPARING WITH WEBCAM FACE
+
+            face_names.append(name)          # APPEND THE NAME IN FACE NAME LIST
+            if name in known_faces_names:
+                if name in students:
+                    students.remove(name) # REPETATION OF NAMES ERROR , ONLY ONE TIME ATTENDANCE NAME IS TAKEN
+                    print(students)
+                    current_time = now.strftime("%H-%M-%S") # GET THE CURRENT TIME (HOUR , MINUTE , SECOND)
+                    lnwriter.writerow([name, current_time])  # NAME AND TIME IS TAKEN IN TUPLE TO ADD IN CSV  FROM LINE 40 
+    cv2.imshow("attendance system" , frame)
+    if cv2.waitKey(1) & 0xFF  == ord("q"):
+        break
+video_capture.release()
+cv2.destroyAllWindows()
+f.close()
