@@ -1,1 +1,2 @@
-# face_recognition
+# face_recognition_attendance system 
+# it is made with python
